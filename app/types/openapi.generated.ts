@@ -1,4 +1,28 @@
 export interface paths {
+    "/api/streams/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all stream templates
+         * @description Returns every stream template held in memory on the current instance.
+         */
+        get: operations["listStreamTemplates"];
+        put?: never;
+        /**
+         * Create a new stream template
+         * @description Creates a reusable stream preset with decimal string amounts and collision-free UUID ids.
+         */
+        post: operations["createStreamTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/activity": {
         parameters: {
             query?: never;
@@ -1315,6 +1339,44 @@ export interface components {
                 nextCursor: string | null;
             };
         };
+        StreamTemplate: {
+            /**
+             * @description Unique template identifier (tpl_<uuid>).
+             * @example tpl_9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+             */
+            id: string;
+            /**
+             * @description Template name.
+             * @example Monthly Design Retainer
+             */
+            name: string;
+            /**
+             * @description Asset code (e.g. XLM, USDC).
+             * @example XLM
+             */
+            asset: string;
+            /**
+             * @description Payment amount per interval as a decimal string with at most 7 decimals.
+             * @example 120.5
+             */
+            amountPerInterval: string;
+            /**
+             * @description Payout interval in seconds (60 to 31,536,000).
+             * @example 2592000
+             */
+            intervalSeconds: number;
+            /**
+             * @description Optional memo or description for the template.
+             * @example Recurring freelance payment
+             */
+            memo?: string;
+            /**
+             * Format: date-time
+             * @description ISO 8601 timestamp when the template was created.
+             * @example 2026-01-15T00:00:00.000Z
+             */
+            createdAt: string;
+        };
     };
     responses: {
         /** @description Bad request — invalid input. */
@@ -1407,6 +1469,24 @@ export interface components {
                 "application/json": components["schemas"]["ErrorEnvelope"];
             };
         };
+        /** @description Payload too large — request body exceeds size limit. */
+        413: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": {
+                 *         "code": "REQUEST_TOO_LARGE",
+                 *         "message": "Request body exceeds maximum allowed size.",
+                 *         "request_id": "req_01HZ9ABCDEF"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
         /** @description Unprocessable entity — request body failed schema validation. */
         422: {
             headers: {
@@ -1451,6 +1531,83 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listStreamTemplates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of stream templates. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        templates: components["schemas"]["StreamTemplate"][];
+                    };
+                };
+            };
+        };
+    };
+    createStreamTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Non-empty template name.
+                     * @example Monthly Design Retainer
+                     */
+                    name: string;
+                    /**
+                     * @description Asset symbol (e.g. XLM, USDC).
+                     * @example XLM
+                     */
+                    asset: string;
+                    /**
+                     * @description Amount per interval as a decimal string (numeric values accepted if lossless).
+                     * @example 120.5
+                     */
+                    amountPerInterval: string;
+                    /**
+                     * @description Interval in seconds between payouts (60 to 31536000).
+                     * @example 2592000
+                     */
+                    intervalSeconds: number;
+                    /**
+                     * @description Optional memo string.
+                     * @example Recurring freelance payment
+                     */
+                    memo?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Stream template created successfully. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        template: components["schemas"]["StreamTemplate"];
+                    };
+                };
+            };
+            400: components["responses"]["400"];
+            413: components["responses"]["413"];
+            422: components["responses"]["422"];
+        };
+    };
     listActivity: {
         parameters: {
             query?: {

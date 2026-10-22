@@ -882,6 +882,58 @@
             }
           }
         }
+      },
+      "StreamTemplate": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "asset",
+          "amountPerInterval",
+          "intervalSeconds",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique template identifier (tpl_<uuid>).",
+            "example": "tpl_9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          "name": {
+            "type": "string",
+            "description": "Template name.",
+            "example": "Monthly Design Retainer"
+          },
+          "asset": {
+            "type": "string",
+            "description": "Asset code (e.g. XLM, USDC).",
+            "example": "XLM"
+          },
+          "amountPerInterval": {
+            "type": "string",
+            "pattern": "^\\d{1,12}(\\.\\d{1,7})?$",
+            "description": "Payment amount per interval as a decimal string with at most 7 decimals.",
+            "example": "120.5"
+          },
+          "intervalSeconds": {
+            "type": "integer",
+            "minimum": 60,
+            "maximum": 31536000,
+            "description": "Payout interval in seconds (60 to 31,536,000).",
+            "example": 2592000
+          },
+          "memo": {
+            "type": "string",
+            "description": "Optional memo or description for the template.",
+            "example": "Recurring freelance payment"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the template was created.",
+            "example": "2026-01-15T00:00:00.000Z"
+          }
+        }
       }
     },
     "responses": {
@@ -970,6 +1022,23 @@
           }
         }
       },
+      "413": {
+        "description": "Payload too large — request body exceeds size limit.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "error": {
+                "code": "REQUEST_TOO_LARGE",
+                "message": "Request body exceeds maximum allowed size.",
+                "request_id": "req_01HZ9ABCDEF"
+              }
+            }
+          }
+        }
+      },
       "422": {
         "description": "Unprocessable entity — request body failed schema validation.",
         "content": {
@@ -1007,6 +1076,122 @@
     }
   },
   "paths": {
+    "/api/streams/template": {
+      "get": {
+        "operationId": "listStreamTemplates",
+        "summary": "List all stream templates",
+        "description": "Returns every stream template held in memory on the current instance.",
+        "tags": [
+          "Streams"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of stream templates.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "templates"
+                  ],
+                  "properties": {
+                    "templates": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/StreamTemplate"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createStreamTemplate",
+        "summary": "Create a new stream template",
+        "description": "Creates a reusable stream preset with decimal string amounts and collision-free UUID ids.",
+        "tags": [
+          "Streams"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "asset",
+                  "amountPerInterval",
+                  "intervalSeconds"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Non-empty template name.",
+                    "example": "Monthly Design Retainer"
+                  },
+                  "asset": {
+                    "type": "string",
+                    "description": "Asset symbol (e.g. XLM, USDC).",
+                    "example": "XLM"
+                  },
+                  "amountPerInterval": {
+                    "type": "string",
+                    "pattern": "^\\d{1,12}(\\.\\d{1,7})?$",
+                    "description": "Amount per interval as a decimal string (numeric values accepted if lossless).",
+                    "example": "120.5"
+                  },
+                  "intervalSeconds": {
+                    "type": "integer",
+                    "minimum": 60,
+                    "maximum": 31536000,
+                    "description": "Interval in seconds between payouts (60 to 31536000).",
+                    "example": 2592000
+                  },
+                  "memo": {
+                    "type": "string",
+                    "description": "Optional memo string.",
+                    "example": "Recurring freelance payment"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stream template created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "template"
+                  ],
+                  "properties": {
+                    "template": {
+                      "$ref": "#/components/schemas/StreamTemplate"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          }
+        }
+      }
+    },
     "/api/activity": {
       "get": {
         "operationId": "listActivity",
